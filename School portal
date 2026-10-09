@@ -1,0 +1,604 @@
+"use client";
+
+import { useState } from "react";
+
+type Role = "Student" | "Teacher" | "Admin";
+type Tab =
+  | "Dashboard"
+  | "Students"
+  | "Teachers"
+  | "Admissions"
+  | "Results"
+  | "Notifications"
+  | "Settings";
+
+const demoStudents = [
+  { id: "ST001", name: "Amina Yusuf", className: "SS2", status: "Active" },
+  { id: "ST002", name: "Musa Ibrahim", className: "SS1", status: "Active" },
+  { id: "ST003", name: "Fatima Ali", className: "JSS3", status: "Active" },
+];
+
+const demoTeachers = [
+  { id: "T001", name: "Mr. John Adams", subject: "Mathematics" },
+  { id: "T002", name: "Mrs. Grace Bello", subject: "English" },
+  { id: "T003", name: "Mr. David Musa", subject: "Physics" },
+];
+
+const demoResults = [
+  { subject: "Mathematics", score: 85, grade: "A" },
+  { subject: "English Language", score: 78, grade: "B" },
+  { subject: "Physics", score: 91, grade: "A" },
+  { subject: "Chemistry", score: 73, grade: "B" },
+];
+
+export default function SchoolManagementPortal() {
+  const [role, setRole] = useState<Role>("Admin");
+  const [tab, setTab] = useState<Tab>("Dashboard");
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [schoolName, setSchoolName] = useState("My School");
+  const [studentName, setStudentName] = useState("");
+  const [studentClass, setStudentClass] = useState("JSS1");
+  const [admissions, setAdmissions] = useState<
+    { name: string; className: string; status: string }[]
+  >([]);
+  const [notice, setNotice] = useState("");
+  const [notices, setNotices] = useState<string[]>([
+    "Welcome to the School Management Portal.",
+    "Please check your examination timetable.",
+  ]);
+  const [results, setResults] = useState(demoResults);
+  const [message, setMessage] = useState("");
+
+  function login(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!email.trim() || !password.trim()) {
+      setMessage("Enter your email and password.");
+      return;
+    }
+
+    // DEMO ONLY: replace this with Supabase authentication.
+    setLoggedIn(true);
+    setMessage("");
+  }
+
+  function logout() {
+    setLoggedIn(false);
+    setPassword("");
+    setTab("Dashboard");
+  }
+
+  function addAdmission(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!studentName.trim()) {
+      setMessage("Enter the applicant's name.");
+      return;
+    }
+
+    setAdmissions((current) => [
+      ...current,
+      {
+        name: studentName.trim(),
+        className: studentClass,
+        status: "Pending",
+      },
+    ]);
+
+    setStudentName("");
+    setStudentClass("JSS1");
+    setMessage("Admission application added successfully.");
+  }
+
+  function publishNotice(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!notice.trim()) return;
+
+    setNotices((current) => [notice.trim(), ...current]);
+    setNotice("");
+    setMessage("Notification published.");
+  }
+
+  function updateAdmission(index: number, status: string) {
+    setAdmissions((current) =>
+      current.map((item, i) => (i === index ? { ...item, status } : item)),
+    );
+  }
+
+  function updateResult(
+    index: number,
+    field: "score" | "grade",
+    value: string,
+  ) {
+    setResults((current) =>
+      current.map((item, i) => {
+        if (i !== index) return item;
+
+        if (field === "score") {
+          const score = Math.max(0, Math.min(100, Number(value) || 0));
+          const grade =
+            score >= 80
+              ? "A"
+              : score >= 70
+                ? "B"
+                : score >= 60
+                  ? "C"
+                  : score >= 50
+                    ? "D"
+                    : "F";
+
+          return { ...item, score, grade };
+        }
+
+        return { ...item, grade: value };
+      }),
+    );
+  }
+
+  const tabs: Tab[] =
+    role === "Admin"
+      ? [
+          "Dashboard",
+          "Students",
+          "Teachers",
+          "Admissions",
+          "Results",
+          "Notifications",
+          "Settings",
+        ]
+      : role === "Teacher"
+        ? ["Dashboard", "Students", "Results", "Notifications"]
+        : ["Dashboard", "Results", "Notifications", "Settings"];
+
+  if (!loggedIn) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-100 p-5">
+        <section className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
+          <div className="mb-6 text-center">
+            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-700 text-3xl text-white">
+              🎓
+            </div>
+
+            <h1 className="text-2xl font-bold text-slate-900">
+              {schoolName}
+            </h1>
+            <p className="mt-2 text-sm text-slate-500">
+              School Management Portal
+            </p>
+          </div>
+
+          <form onSubmit={login} className="space-y-4">
+            <label className="block text-sm font-medium text-slate-700">
+              Email address
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@school.com"
+                className="mt-1 w-full rounded-lg border p-3 outline-none focus:border-blue-600"
+                required
+              />
+            </label>
+
+            <label className="block text-sm font-medium text-slate-700">
+              Password
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                className="mt-1 w-full rounded-lg border p-3 outline-none focus:border-blue-600"
+                required
+              />
+            </label>
+
+            <label className="block text-sm font-medium text-slate-700">
+              Demo role
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as Role)}
+                className="mt-1 w-full rounded-lg border bg-white p-3"
+              >
+                <option value="Student">Student</option>
+                <option value="Teacher">Teacher</option>
+                <option value="Admin">Administrator</option>
+              </select>
+            </label>
+
+            {message && (
+              <p className="text-sm text-blue-700">{message}</p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-blue-700 p-3 font-semibold text-white hover:bg-blue-800"
+            >
+              Sign in to demo
+            </button>
+
+            <p className="text-center text-xs text-slate-500">
+              Demo login only. Connect a real authentication provider before
+              using this portal for actual school records.
+            </p>
+          </form>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-100 text-slate-900">
+      <header className="flex flex-wrap items-center justify-between gap-4 bg-blue-800 px-5 py-4 text-white md:px-8">
+        <div>
+          <h1 className="text-xl font-bold">{schoolName}</h1>
+          <p className="text-sm text-blue-100">
+            School Management Portal
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="rounded-full bg-blue-700 px-3 py-2 text-sm">
+            {role}
+          </span>
+          <button
+            onClick={logout}
+            className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-blue-800"
+          >
+            Log out
+          </button>
+        </div>
+      </header>
+
+      <div className="mx-auto grid max-w-7xl gap-6 p-4 md:grid-cols-[220px_1fr] md:p-8">
+        <aside className="h-fit rounded-xl bg-white p-3 shadow-sm">
+          <p className="px-3 py-2 text-xs font-bold uppercase text-slate-400">
+            Main menu
+          </p>
+
+          <nav className="flex gap-2 overflow-x-auto md:flex-col">
+            {tabs.map((item) => (
+              <button
+                key={item}
+                onClick={() => {
+                  setTab(item);
+                  setMessage("");
+                }}
+                className={`whitespace-nowrap rounded-lg px-3 py-3 text-left text-sm font-medium ${
+                  tab === item
+                    ? "bg-blue-700 text-white"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                {item}
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        <section className="min-w-0">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold">{tab}</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Welcome back, {role}.
+            </p>
+          </div>
+
+          {message && (
+            <div className="mb-4 rounded-lg bg-blue-50 p-3 text-sm text-blue-800">
+              {message}
+            </div>
+          )}
+
+          {tab === "Dashboard" && (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {[
+                  {
+                    title: "Students",
+                    value: demoStudents.length,
+                    icon: "👨‍🎓",
+                  },
+                  {
+                    title: "Teachers",
+                    value: demoTeachers.length,
+                    icon: "👩‍🏫",
+                  },
+                  {
+                    title: "Applications",
+                    value: admissions.length,
+                    icon: "📝",
+                  },
+                  {
+                    title: "Notifications",
+                    value: notices.length,
+                    icon: "🔔",
+                  },
+                ].map((card) => (
+                  <div
+                    key={card.title}
+                    className="rounded-xl bg-white p-5 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-slate-500">{card.title}</p>
+                      <span className="text-2xl">{card.icon}</span>
+                    </div>
+                    <p className="mt-3 text-3xl font-bold">{card.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 rounded-xl bg-white p-5 shadow-sm">
+                <h3 className="mb-4 font-bold">Recent notifications</h3>
+                {notices.slice(0, 3).map((item, index) => (
+                  <p
+                    key={`${item}-${index}`}
+                    className="border-b py-3 text-sm last:border-0"
+                  >
+                    🔔 {item}
+                  </p>
+                ))}
+              </div>
+            </>
+          )}
+
+          {tab === "Students" && (
+            <div className="overflow-x-auto rounded-xl bg-white p-5 shadow-sm">
+              <h3 className="mb-4 font-bold">Student directory</h3>
+              <table className="w-full min-w-[450px] text-left text-sm">
+                <thead>
+                  <tr className="border-b text-slate-500">
+                    <th className="p-3">Student ID</th>
+                    <th className="p-3">Name</th>
+                    <th className="p-3">Class</th>
+                    <th className="p-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {demoStudents.map((student) => (
+                    <tr key={student.id} className="border-b last:border-0">
+                      <td className="p-3">{student.id}</td>
+                      <td className="p-3">{student.name}</td>
+                      <td className="p-3">{student.className}</td>
+                      <td className="p-3 text-green-700">
+                        {student.status}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {tab === "Teachers" && (
+            <div className="rounded-xl bg-white p-5 shadow-sm">
+              <h3 className="mb-4 font-bold">Teacher directory</h3>
+              {demoTeachers.map((teacher) => (
+                <div
+                  key={teacher.id}
+                  className="flex flex-wrap justify-between gap-2 border-b py-4 last:border-0"
+                >
+                  <div>
+                    <p className="font-medium">{teacher.name}</p>
+                    <p className="text-sm text-slate-500">{teacher.id}</p>
+                  </div>
+                  <span className="rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700">
+                    {teacher.subject}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === "Admissions" && (
+            <div className="space-y-5">
+              <form
+                onSubmit={addAdmission}
+                className="rounded-xl bg-white p-5 shadow-sm"
+              >
+                <h3 className="mb-4 font-bold">New admission application</h3>
+
+                <label className="mb-4 block text-sm">
+                  Applicant full name
+                  <input
+                    value={studentName}
+                    onChange={(e) => setStudentName(e.target.value)}
+                    className="mt-1 w-full rounded-lg border p-3"
+                    placeholder="Enter full name"
+                    required
+                  />
+                </label>
+
+                <label className="mb-4 block text-sm">
+                  Applying for class
+                  <select
+                    value={studentClass}
+                    onChange={(e) => setStudentClass(e.target.value)}
+                    className="mt-1 w-full rounded-lg border bg-white p-3"
+                  >
+                    {[
+                      "Nursery 1",
+                      "Nursery 2",
+                      "Primary 1",
+                      "Primary 2",
+                      "Primary 3",
+                      "Primary 4",
+                      "Primary 5",
+                      "Primary 6",
+                      "JSS1",
+                      "JSS2",
+                      "JSS3",
+                      "SS1",
+                      "SS2",
+                      "SS3",
+                    ].map((name) => (
+                      <option key={name}>{name}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <button className="rounded-lg bg-blue-700 px-5 py-3 font-semibold text-white">
+                  Submit application
+                </button>
+              </form>
+
+              <div className="rounded-xl bg-white p-5 shadow-sm">
+                <h3 className="mb-4 font-bold">Applications</h3>
+
+                {admissions.length === 0 ? (
+                  <p className="text-sm text-slate-500">
+                    No applications have been added in this demo session.
+                  </p>
+                ) : (
+                  admissions.map((item, index) => (
+                    <div
+                      key={`${item.name}-${index}`}
+                      className="flex flex-wrap items-center justify-between gap-3 border-b py-4 last:border-0"
+                    >
+                      <div>
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-sm text-slate-500">
+                          {item.className}
+                        </p>
+                      </div>
+
+                      <select
+                        value={item.status}
+                        onChange={(e) =>
+                          updateAdmission(index, e.target.value)
+                        }
+                        className="rounded-lg border bg-white p-2 text-sm"
+                      >
+                        <option>Pending</option>
+                        <option>Approved</option>
+                        <option>Rejected</option>
+                      </select>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {tab === "Results" && (
+            <div className="overflow-x-auto rounded-xl bg-white p-5 shadow-sm">
+              <h3 className="mb-2 font-bold">Examination results</h3>
+              <p className="mb-4 text-sm text-slate-500">
+                Demo results. Edit a score to recalculate its grade.
+              </p>
+
+              <table className="w-full min-w-[420px] text-left text-sm">
+                <thead>
+                  <tr className="border-b text-slate-500">
+                    <th className="p-3">Subject</th>
+                    <th className="p-3">Score</th>
+                    <th className="p-3">Grade</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.map((result, index) => (
+                    <tr key={result.subject} className="border-b last:border-0">
+                      <td className="p-3">{result.subject}</td>
+                      <td className="p-3">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={result.score}
+                          disabled={role === "Student"}
+                          onChange={(e) =>
+                            updateResult(index, "score", e.target.value)
+                          }
+                          className="w-20 rounded-lg border p-2 disabled:bg-slate-100"
+                        />
+                      </td>
+                      <td className="p-3 font-bold">{result.grade}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <button
+                onClick={() => setMessage("Demo results displayed.")}
+                className="mt-4 rounded-lg bg-blue-700 px-4 py-2 text-white"
+              >
+                View results
+              </button>
+            </div>
+          )}
+
+          {tab === "Notifications" && (
+            <div className="space-y-5">
+              {role === "Admin" && (
+                <form
+                  onSubmit={publishNotice}
+                  className="rounded-xl bg-white p-5 shadow-sm"
+                >
+                  <h3 className="mb-3 font-bold">Publish notification</h3>
+                  <textarea
+                    value={notice}
+                    onChange={(e) => setNotice(e.target.value)}
+                    className="min-h-24 w-full rounded-lg border p-3"
+                    placeholder="Write a school announcement..."
+                    required
+                  />
+                  <button className="mt-3 rounded-lg bg-blue-700 px-4 py-2 text-white">
+                    Publish
+                  </button>
+                </form>
+              )}
+
+              <div className="rounded-xl bg-white p-5 shadow-sm">
+                {notices.map((item, index) => (
+                  <div
+                    key={`${item}-${index}`}
+                    className="border-b py-4 last:border-0"
+                  >
+                    <p>{item}</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      School announcement
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tab === "Settings" && (
+            <div className="rounded-xl bg-white p-5 shadow-sm">
+              <h3 className="mb-4 font-bold">School settings</h3>
+
+              <label className="block text-sm">
+                School name
+                <input
+                  value={schoolName}
+                  onChange={(e) => setSchoolName(e.target.value)}
+                  className="mt-1 w-full rounded-lg border p-3"
+                />
+              </label>
+
+              <button
+                onClick={() => setMessage("School name updated in this demo.")}
+                className="mt-4 rounded-lg bg-blue-700 px-4 py-2 text-white"
+              >
+                Save settings
+              </button>
+
+              <p className="mt-4 text-sm text-slate-500">
+                Demo settings are kept in browser memory only. Connect a
+                database to save changes permanently.
+              </p>
+            </div>
+          )}
+
+          <footer className="mt-8 pb-4 text-center text-xs text-slate-400">
+            © {new Date().getFullYear()} {schoolName} — School Management
+            Portal
+          </footer>
+        </section>
+      </div>
+    </main>
+  );
+}
